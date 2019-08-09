@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.hzero.todo.infra.mapper.OrderInfoMapper">
+    
+    <!--查询订单信息-->
+    <select id="queryOrderInfo" parameterType="org.hzero.todo.api.dto.SearchOrder" resultType="org.hzero.todo.api.dto.OrderInfo">
+        SELECT hea.order_number, com.company_name, cus.customer_name, hea.creation_date, hea.order_status,
+                SUM(line.order_quantity * line.unit_selling_price) totalAmount
+        FROM hodr_company_24520 com, hodr_customer_24520 cus, hodr_so_header_24520 hea, hodr_so_line_24520 line, hodr_item_24520 item
+        where hea.company_id = com.company_id
+        AND hea.customer_id = cus.customer_id
+        AND line.so_header_id = hea.so_header_id
+        AND line.item_id = item.item_id
+        <if test="companyId != null">
+            AND com.company_id = #{companyId}
+        </if>
+        <if test="customerId != null">
+            AND cus.customer_id = #{customerId}
+        </if>
+        <if test="orderNumber != null and orderNumber != ''">
+            AND hea.order_number = #{orderNumber}
+        </if>
+        <if test="itemId != null">
+            AND item.item_id = #{itemId}
+        </if>
+        <if test="orderStatus != null and orderStatus != ''">
+            AND hea.order_status = #{orderStatus}
+        </if>
+        GROUP BY hea.order_number
+    </select>
+
+    <!--根据订单号查询订单明细-->
+    <select id="queryOrderDetailInfo" parameterType="java.lang.String" resultType="org.hzero.todo.api.dto.OrderDetailInfo">
+        SELECT t1.*, t2.totalAmount
+        FROM (SELECT hea.order_number, com.company_name, cus.customer_name ,
+					hea.creation_date , hea.order_status ,
+					line.line_number , item.item_code ,
+					item.item_description , line.order_quantity_uom , line.order_quantity ,
+					line.unit_selling_price ,
+					(line.order_quantity*line.unit_selling_price)AS line_amount, line.description
+			  FROM hodr_company_24520 com, hodr_customer_24520 cus, hodr_so_header_24520 hea, hodr_so_line_24520 line, hodr_item_24520 item
+			  where hea.company_id = com.company_id
+			  AND hea.customer_id = cus.customer_id
+			  AND line.so_header_id = hea.so_header_id
+			  AND line.item_id = item.item_id
+			  <if test="_parameter != null and _parameter != ''">
+                  AND hea.order_number = #{orderNumber}
+              </if>
+			  group by line.line_number, item.item_id) t1 LEFT JOIN (SELECT hea.order_number, SUM(line.order_quantity * line.unit_selling_price) totalAmount
+																													FROM hodr_company_24520 com, hodr_customer_24520 cus, hodr_so_header_24520 hea, hodr_so_line_24520 line, hodr_item_24520 item
+																													where hea.company_id = com.company_id
+																													AND hea.customer_id = cus.customer_id
+																													AND line.so_header_id = hea.so_header_id
+																													AND line.item_id = item.item_id
+                                                                                                                    <if test="_parameter != null and _parameter != ''">
+                                                                                                                        AND hea.order_number = #{orderNumber}
+                                                                                                                    </if>
+																													GROUP BY hea.order_number) t2
+        ON t1.order_number = t2.order_number
+    </select>
+
+    <!--根据搜索条件查询订单明细-->
+    <select id="queryOrderDetailInfoBySearchOrder" parameterType="org.hzero.todo.api.dto.SearchOrder" resultType="org.hzero.todo.api.dto.ExportOrderInfoDTO">
+        SELECT t1.*, t2.totalAmount
+        FROM (SELECT hea.order_number, com.company_number, cus.customer_number ,
+        hea.order_date , hea.order_status ,
+        line.line_number , item.item_code ,
+        item.item_description , line.order_quantity_uom , line.order_quantity ,
+        line.unit_selling_price ,
+        (line.order_quantity*line.unit_selling_price)AS line_amount, line.description
+        FROM hodr_company_24520 com, hodr_customer_24520 cus, hodr_so_header_24520 hea, hodr_so_line_24520 line, hodr_item_24520 item
+        where hea.company_id = com.company_id
+        AND hea.customer_id = cus.customer_id
+        AND line.so_header_id = hea.so_header_id
+        AND line.item_id = item.item_id
+        group by line.line_number, item.item_id) t1 LEFT JOIN (SELECT hea.order_number, SUM(line.order_quantity * line.unit_selling_price) totalAmount
+                                                                 FROM hodr_company_24520 com, hodr_customer_24520 cus, hodr_so_header_24520 hea, hodr_so_line_24520 line, hodr_item_24520 item
+                                                                 where hea.company_id = com.company_id
+                                                                 AND hea.customer_id = cus.customer_id
+                                                                 AND line.so_header_id = hea.so_header_id
+                                                                 AND line.item_id = item.item_id
+                                                                 GROUP BY hea.order_number) t2
+
+        ON t1.order_number = t2.order_number
+        WHERE 1 = 1
+        <if test="companyId != null">
+            AND t1.company_id = #{companyId}
+        </if>
+        <if test="customerId != null">
+            AND t1.customer_id = #{customerId}
+        </if>
+        <if test="orderStatus != null and orderStatus != ''">
+            AND t1.order_status = #{orderStatus}
+        </if>
+        <if test="orderNumber != null and orderNumber != ''">
+            AND t1.order_number = #{orderNumber}
+        </if>
+        <if test="itemId != null">
+            AND t1.item_id = #{itemId}
+        </if>
+    </select>
+</mapper>

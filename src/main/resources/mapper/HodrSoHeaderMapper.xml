@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.hzero.todo.infra.mapper.HodrSoHeaderMapper">
+
+    <select id="selectMaxSoHeaderId" resultType="java.lang.Long">
+        SELECT MAX(so_header_id)
+        FROM hodr_so_header_24520
+    </select>
+    <select id="selectRelationCustomerIdByCompanyId" parameterType="java.lang.Long" resultType="java.lang.Long">
+        SELECT DISTINCT customer_id
+        FROM hodr_so_header_24520 header
+        WHERE company_id = #{_parameter}
+    </select>
+</mapper>
